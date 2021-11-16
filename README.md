@@ -4,9 +4,9 @@ In this laboratory we will see:
 
 - How to insert data from a file to more than one table.
 - how to extend entities using abstract entities
-- how to extend a schema to create a new one, overwriting the mapping
-- how to work with two schemas and databases that share the same model
-- how to use imported data from one database to import it into another
+- how to define a schema that works with entities in different databases
+- how to run a bulkinsert on entities in different databases
+- how to export and import entity data in different databases
 
 ## Pre requirements
 
