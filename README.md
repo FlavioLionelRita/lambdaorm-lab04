@@ -111,10 +111,6 @@ databases:
       user: test
       password: test
       database: test
-      multipleStatements: true
-      waitForConnections: true
-      connectionLimit: 10
-      queueLimit: 0
   - name: mydb2
     dialect: postgres
     connection:
@@ -143,13 +139,6 @@ schemas:
           - name: iso3
             length: 3
             nullable: false
-          - name: iso2
-            nullable: false
-            length: 2
-          - name: capital
-          - name: currency
-          - name: region
-          - name: subregion
         relations:
           - name: states
             type: manyToOne
@@ -170,7 +159,12 @@ schemas:
             nullable: false
           - name: countryCode
             nullable: false
-            length: 3	
+            length: 3
+        relations:
+          - name: country
+            from: countryCode
+            entity: Countries
+            to: iso3
 ```
 
 ### Update
@@ -179,7 +173,7 @@ schemas:
 lambdaorm update
 ```
 
-the file model.ts will be created inside src/models/countries.
+the model will be created inside file src/models/countries/model.ts .
 
 ### Sync
 
