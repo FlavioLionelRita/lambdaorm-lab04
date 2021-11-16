@@ -8,6 +8,19 @@ In this laboratory we will see:
 - how to run a bulkinsert on entities in different databases
 - how to export and import entity data in different databases
 
+## Schema diagram
+
+This schema has two entities that are in different databases.
+
+![schema](schema4.png)
+
+The database attribute is used in the entity to be able to specify that an entity is in a database other than the default of the schema.
+
+```yaml
+      - name: States
+        database: mydb2
+```
+
 ## Pre requirements
 
 ### Create database for test
