@@ -3,8 +3,7 @@
 In this laboratory we will see:
 
 - How to insert data from a file to more than one table.
-- how to extend entities using abstract entities
-- how to define a schema that works with entities in different databases
+- how to define a stage that works with entities in different databases
 - how to run a bulkinsert on entities in different databases
 - how to export and import entity data in different databases
 
@@ -12,13 +11,22 @@ In this laboratory we will see:
 
 This schema has two entities that are in different databases.
 
-![schema](schema4.png)
+![schema](schema4.svg)
 
-The database attribute is used in the entity to be able to specify that an entity is in a database other than the default of the schema.
+In the definition of the stage, the rules are defined to determine which data source will be used.
+
+This is done via the condition property on each dataSource.
+
+In this example, if the entity is Country, it will be directed to data source 1 and if the entity is States, it will be directed to data source 2
 
 ```yaml
-      - name: States
-        database: mydb2
+stages:
+  - name: stage1
+    dataSources:
+      - name: dataSource1
+        condition: entity == "Countries"
+      - name: dataSource2
+        condition: entity == "States"
 ```
 
 ## Pre requirements
@@ -96,22 +104,50 @@ In the creation of the project the schema was created but without any entity.
 Add the Country entity as seen in the following example
 
 ```yaml
-app:
-  src: src
-  data: data
-  models: models
-  defaultDatabase: mydb
-databases:
-  - name: mydb
+entities:
+  - name: Countries
+    primaryKey: ["iso3"]
+    uniqueKey: ["name"]
+    properties:
+      - name: name
+        nullable: false
+      - name: iso3
+        length: 3
+        nullable: false
+    relations:
+      - name: states
+        type: manyToOne
+        composite: true
+        from: iso3
+        entity: States
+        to: countryCode
+  - name: States
+    primaryKey: ["id"]
+    uniqueKey: ["countryCode", "name"]
+    properties:
+      - name: id
+        type: integer
+        nullable: false
+      - name: name
+        nullable: false
+      - name: countryCode
+        nullable: false
+        length: 3
+    relations:
+      - name: country
+        from: countryCode
+        entity: Countries
+        to: iso3
+dataSources:
+  - name: dataSource1
     dialect: mysql
-    schema: countries
     connection:
       host: localhost
       port: 3306
       user: test
       password: test
       database: test
-  - name: mydb2
+  - name: dataSource2
     dialect: postgres
     connection:
       host: localhost
@@ -119,52 +155,13 @@ databases:
       user: test
       password: test
       database: test
-schemas:
-  - name: countries
-    entities:
-      - name: Positions
-        abstract: true
-        properties:
-          - name: latitude
-            length: 16
-          - name: longitude
-            length: 16
-      - name: Countries
-        extends: Positions
-        primaryKey: ["iso3"]
-        uniqueKey: ["name"]
-        properties:
-          - name: name
-            nullable: false
-          - name: iso3
-            length: 3
-            nullable: false
-        relations:
-          - name: states
-            type: manyToOne
-            composite: true
-            from: iso3
-            entity: States
-            to: countryCode
-      - name: States
-        extends: Positions
-        database: mydb2
-        primaryKey: ["id"]
-        uniqueKey: ["countryCode", "name"]
-        properties:
-          - name: id
-            type: integer
-            nullable: false
-          - name: name
-            nullable: false
-          - name: countryCode
-            nullable: false
-            length: 3
-        relations:
-          - name: country
-            from: countryCode
-            entity: Countries
-            to: iso3
+stages:
+  - name: stage1
+    dataSources:
+      - name: dataSource1
+        condition: entity == "Countries"
+      - name: dataSource2
+        condition: entity == "States"
 ```
 
 ### Update
@@ -185,20 +182,20 @@ It will generate:
 
 - the Counties table is created in database test on MySql
 - the States table is created in database test on Postgres
-- status file "mydb-state.json" in the "data" folder.
+- status file "stage1-state.json" in the "data" folder.
 
 ### Popuplate Data
 
 then we execute
 
 ```sh
-lambdaorm run -e "Countries.bulkInsert().include(p => p.states)" -d ./data.json -n mydb
+lambdaorm run -e "Countries.bulkInsert().include(p => p.states)" -d ./data.json
 ```
 
 test:
 
 ```sh
-lambdaorm run -e "Countries.page(1,10).include(p => p.states)" -n mydb
+lambdaorm run -e "Countries.page(1,10).include(p => p.states)"
 ```
 
 ### Export data from mydb
@@ -217,7 +214,7 @@ lambdaorm run -e "Countries.deleteAll()"
 ### Import data
 
 ```sh
-lambdaorm import -s ./mydb-export.json
+lambdaorm import -d ./stage1-export.json
 ```
 
 test:
